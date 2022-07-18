@@ -1,8 +1,8 @@
-require_relative 'lib/activefire/version'
+require_relative 'lib/active_fire/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'activefire'
-  spec.version       = Activefire::VERSION
+  spec.version       = ActiveFire::VERSION
   spec.authors       = ['Jonathan Duarte']
   spec.email         = ['jonathan.duarte@rocketmail.com']
 
@@ -26,6 +26,9 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
+  spec.add_dependency 'google-cloud-firestore'
+
+  spec.add_development_dependency 'dotenv'
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'reek'
 end
