@@ -1,3 +1,3 @@
 module ActiveFire
-  VERSION = "0.1.0"
+  VERSION = "0.0.1-dev"
 end

@@ -26,9 +26,9 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
-  spec.add_dependency 'google-cloud-firestore'
+  spec.add_dependency 'google-cloud-firestore', '~> 2.7'
 
-  spec.add_development_dependency 'dotenv'
-  spec.add_development_dependency 'rubocop'
-  spec.add_development_dependency 'reek'
+  spec.add_development_dependency 'dotenv', '~> 2.7'
+  spec.add_development_dependency 'rubocop', '~> 1.31'
+  spec.add_development_dependency 'reek', '~> 6.1'
 end
