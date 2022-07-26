@@ -3,6 +3,9 @@ class DummyAuthor < ActiveFire::Base
   attribute :age, type: Integer
 end
 
+# Those Dummy classes work as Firestore adapters
+# They have the same signature, and allow us to test
+# whether the method chain is called correctly
 class DummyDoc
   def initialize(data)
     collection, id = data.split("/")
