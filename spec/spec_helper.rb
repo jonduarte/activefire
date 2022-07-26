@@ -1,5 +1,7 @@
 require 'bundler/setup'
+require 'dotenv/load'
 require 'active_fire'
+
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -11,4 +13,6 @@ RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
+
+  config.filter_run_when_matching focus: true
 end

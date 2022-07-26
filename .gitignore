@@ -9,5 +9,10 @@
 /private
 .env
 
+.DS_Store
+
 # rspec failure tracking
 .rspec_status
+
+*.swp
+*.swo
