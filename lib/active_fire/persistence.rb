@@ -1,4 +1,5 @@
 require "active_support/core_ext/string/inflections"
+require "active_support/core_ext/object/blank"
 
 module ActiveFire
   class Query
@@ -103,7 +104,9 @@ module ActiveFire
     class Utils
       class << self
         def build_doc(col, id = nil)
-          ref = [col, id].reject(&blank?).join("/")
+          p col
+          p id
+          ref = [col, id].reject(&:blank?).join("/")
           ActiveFire::Connection.client.doc(ref)
         end
       end

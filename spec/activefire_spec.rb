@@ -3,6 +3,17 @@ class DummyAuthor < ActiveFire::Base
   attribute :age, type: Integer
 end
 
+class DummyDoc
+  def initialize(data)
+    collection, id = data.split("/")
+    @data = { data: { "id": id } }
+  end
+
+  def data
+    @data
+  end
+end
+
 class DummyCol
   attr_reader :conditions
 
@@ -27,6 +38,16 @@ class DummyClient
 
   def initialize
     @cols = []
+    @docs = {}
+  end
+
+  def doc(ref)
+    @docs[ref] = DummyDoc.new(ref)
+    ref
+  end
+
+  def find(ref)
+    @docs[ref]
   end
 
   def collection(collection_name)
@@ -100,7 +121,20 @@ RSpec.describe ActiveFire::Persistence do
     end
   end
 
-  describe 'where' do
+  describe ActiveFire::Persistence::Utils do
+    let(:client) { DummyClient.new }
+    before { ActiveFire::Connection.client = client }
+
+    describe '.build_doc' do
+      it 'creates document reference value' do
+        expect(described_class.build_doc('players')).to eq('players')
+        expect(described_class.build_doc('players', '123')).to eq('players/123')
+      end
+    end
+  end
+
+
+  describe 'conditions' do
     let(:client) { DummyClient.new }
     before { ActiveFire::Connection.client = client }
 
@@ -116,6 +150,10 @@ RSpec.describe ActiveFire::Persistence do
         ['dummies', [:age, '>', 10]],
         ['dummies', 'limit', [10]]
       ]])
+    end
+
+    it 'find specific record' do
+      expect(DummyAuthor.find('abc').id).to eq('abc')
     end
   end
 end
