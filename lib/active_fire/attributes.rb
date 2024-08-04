@@ -1,4 +1,5 @@
 require 'active_support/core_ext/hash/indifferent_access'
+require "active_support/inflector"
 
 module ActiveFire
   module Attributes
@@ -54,6 +55,22 @@ module ActiveFire
       def belongs_to(name)
         __attributes_definition["#{name}_id"] = -> { BelongsToAttribute.new(related_to: name) }
         attribute name
+      end
+
+      def has_many(name)
+        instance_eval do
+          define_method(name) do
+
+            lh = "#{self.class.collection_name.singularize}_id"
+            rh = Persistence.build_doc(self.class.collection_name, id)
+            klass = name.to_s.singularize.camelize.constantize
+            name.to_s.singularize.camelize.constantize.where(lh => rh)
+          end
+
+          # define_method("#{name}=") do |value|
+          #   write_attribute(name, value)
+          # end
+        end
       end
 
       def attribute(name, initializer: -> { Attribute.new })

@@ -1,6 +1,8 @@
 # Project name:string
 class Project < ActiveFire::Base
   attribute :name
+
+  has_many :todos
 end
 
 # Todo title:string completed:boolean project_id:references
@@ -61,6 +63,13 @@ RSpec.describe ActiveFire::Base do
     it 'saves association' do
       c = Todo.create(title: "Link project", project_id: "/projects/C23Cuhlb0VMOCdW5xNwB")
       expect(c.project.name).to eq('Birthday')
+    end
+
+    it 'has many' do
+      c = Todo.create(title: "Link project", project_id: "/projects/C23Cuhlb0VMOCdW5xNwB")
+      p = Project.find("C23Cuhlb0VMOCdW5xNwB")
+      c1 = p.todos.find { |t| t.id == c.id }
+      expect(c1.id).to eq(c.id)
     end
   end
 end
