@@ -1,7 +1,7 @@
 require 'bundler/setup'
 require 'dotenv/load'
+require 'pry'
 require 'active_fire'
-
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

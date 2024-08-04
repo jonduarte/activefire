@@ -3,50 +3,43 @@ require 'active_support/core_ext/hash/indifferent_access'
 module ActiveFire
   module Attributes
     class Attribute
-      attr_reader :type
-
-      def initialize(type:)
-        @type = type
-        @value = @original = nil
-      end
-
-      def write(value)
-        if value.nil?
-          @value = nil
-          return
-        end
-    
-        case type.name
-        when "String"
-          @value = value.to_s
-        when "Integer"
-          @value = value.to_i
-        end
-      end
-
-      def read
-        @value
-      end
+      attr_accessor :value
+      attr_accessor :record
     end
 
-    # class RelationAttribute < Attribute
-    #   def initialize(klass)
-    #     @klass = klass
-    #     @value = @original = nil
-    #   end
+    class BelongsToAttribute < Attribute
+      attr_accessor :value
+      attr_reader :related_to
 
-    #   def write(value)
-    #     if value.is_a? Google::Cloud::Firestore::DocumentReference
-    #       @original = value
-    #       @value = @klass.setup(value.document_id, value.get.data)
-    #     elsif value.respond_to? :ref
-    #       @original = value.ref
-    #       @value = value
-    #     else
-    #       @value = @original = value
-    #     end
-    #   end
-    # end
+      def initialize(related_to:)
+        @related_to = related_to
+      end
+
+      def value=(v)
+        
+        if v.is_a?(Google::Cloud::Firestore::DocumentReference)
+          record.send("#{related_to}=", related_to_klass.load(v.get))
+          @value = v.document_id
+        else
+          doc = build_doc(v)
+          record.send("#{related_to}=", related_to_klass.find(doc.document_id))
+          @value = doc
+        end
+      end
+
+      private
+        def related_to_klass
+          related_to.to_s.camelize.constantize
+        end
+
+        def build_doc(v)
+          if v.start_with?("/")
+            v = v[1..-1]
+          end
+          col, id = v.split("/")
+          Persistence.build_doc(col, id)
+        end
+    end
 
     def self.extended(base)
       base.extend ClassMethods
@@ -58,21 +51,13 @@ module ActiveFire
         @__attributes_definition ||= {}.with_indifferent_access
       end
 
-      # def has_one(name, options = {})
-      #   name = name.to_s
-      #   options = options.with_indifferent_access
-      #   klass = options.fetch("class_name", name).camelize.constantize
-      #   attribute name, initializer: -> { RelationAttribute.new(klass) }
+      def belongs_to(name)
+        __attributes_definition["#{name}_id"] = -> { BelongsToAttribute.new(related_to: name) }
+        attribute name
+      end
 
-      #   define_method "create_#{name}" do |*args|
-      #     # TODO: Can we do this in batches?
-      #     record = klass.create(*args)
-      #     update(name => record.ref)
-      #   end
-      # end
-
-      def attribute(name, type: String)
-        __attributes_definition[name] = -> { Attribute.new(type: type) }
+      def attribute(name, initializer: -> { Attribute.new })
+        __attributes_definition[name] = initializer
 
         instance_eval do
           define_method(name) do
@@ -93,22 +78,33 @@ module ActiveFire
       end
 
       def write_attribute(name, value)
-        @__attributes[name].write(value)
+        assign_attributes({ name => value })
       end
 
       def read_attribute(name)
-        @__attributes.fetch(name).read
+        @__attributes[name]&.value
       end
 
       def assign_attributes(new_attrs)
-        self.class.__attributes_definition.keys.each do |name|
-          @__attributes[name] = self.class.__attributes_definition[name].call
-          @__attributes[name].write(new_attrs[name])
+        new_attrs.each do |key, value|
+          next unless self.class.__attributes_definition[key].present?
+          attribute = self.class.__attributes_definition[key].call
+          attribute.record = self
+          @__attributes[key] = attribute
+          @__attributes[key].value = value
         end
       end
 
       def attributes
-        @__attributes.map.with_object({}) { |(key, value), memo| memo[key] = value.read }
+        reject = {}.with_indifferent_access 
+        @__attributes.map.with_object({}.with_indifferent_access) do |(key, value), memo|
+          if value.is_a?(BelongsToAttribute)
+            reject[value.related_to] = true
+          end
+
+          next if reject[key]
+          memo[key] = value.value
+        end
       end
 
       def inspect

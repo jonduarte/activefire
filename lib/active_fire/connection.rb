@@ -13,7 +13,7 @@ module ActiveFire
     include Singleton
 
     def initialize
-      # @client = ActiveFire::Firestore::Client.new
+      @client = ActiveFire::Firestore::Client.new
     end
 
     def client=(client)

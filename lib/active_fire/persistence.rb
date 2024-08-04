@@ -66,13 +66,17 @@ module ActiveFire
 
     def each(&block)
       @query.get.lazy.each do |doc|
-        model = @klass.setup(doc.document_id, @doc.data)
+        model = @klass.setup(doc.document_id, doc.data)
         yield model
       end
     end
 
     def last
       to_a.last
+    end
+
+    def size
+      to_a.size
     end
 
     private
@@ -101,15 +105,9 @@ module ActiveFire
   end
 
   module Persistence
-    class Utils
-      class << self
-        def build_doc(col, id = nil)
-          p col
-          p id
-          ref = [col, id].reject(&:blank?).join("/")
-          ActiveFire::Connection.client.doc(ref)
-        end
-      end
+    def self.build_doc(col, id = nil)
+      ref = [col, id].reject(&:blank?).join("/")
+      ActiveFire::Connection.client.doc(ref)
     end
 
     def self.extended(base)
@@ -130,7 +128,7 @@ module ActiveFire
       end
 
       def ref
-        Util.build_doc(self.class.collection_name, id)
+        Persistence.build_doc(self.class.collection_name, id)
       end
 
       def delete
@@ -162,9 +160,13 @@ module ActiveFire
       end
 
       def find(id)
-        doc = Utils.build_doc(collection_name, id)
+        doc = Persistence.build_doc(collection_name, id)
         attrs = Connection.client.find(doc).data
         setup(id, attrs)
+      end
+
+      def load(snapshot)
+        setup(snapshot.document_id, snapshot.data)
       end
 
       def find_by(*options)
